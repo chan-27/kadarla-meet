@@ -1,0 +1,26 @@
+.callpage-container {
+    .video-container {
+        height: 100vh;
+        top: 0;
+        left: 0;
+        position: absolute;
+        object-fit: cover;
+        width: 100%;
+        z-index: -1;
+        transform: scaleX(-1);
+
+    }
+    .video-container-call-started {
+        aspect-ratio: 16/9;
+        bottom:  75px;
+        right: 10px;
+        position: absolute;
+        object-fit: cover;
+        width: 20%;
+        z-index: +1;
+        border-radius: 20px;
+        transform: scaleX(-1);
+
+    }
+}
+
