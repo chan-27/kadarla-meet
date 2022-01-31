@@ -1,13 +1,14 @@
 import React, { useContext, useState, useEffect } from "react";
-import Button from "@material-ui/core/Button";
-import TextField from "@material-ui/core/TextField";
-import Typography from "@material-ui/core/Typography";
-import { makeStyles } from "@material-ui/core/styles";
-import { Container, Grid } from "@material-ui/core";
-import { Link, useNavigate } from "react-router-dom";
+import { makeStyles } from "@mui/styles";
+import TextField from "@mui/material/TextField";
+import Container from "@mui/material/Container";
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import { useNavigate } from "react-router-dom";
 import { SocketContext } from "../../SocketContext";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles({
   root: {
     height: "100vh",
   },
@@ -42,23 +43,15 @@ const useStyles = makeStyles((theme) => ({
     padding: "10",
   },
   paper: {
-    margin: theme.spacing(4, 3),
+    marginTop: "15px",
+    marginBottom: "15px",
+    marginLeft: "15px",
+    marginRoght: "15px",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
   },
-  avatar: {
-    margin: theme.spacing(1),
-    backgroundColor: theme.palette.secondary.main,
-  },
-  form: {
-    width: "100%", // Fix IE 11 issue.
-    marginTop: theme.spacing(1),
-  },
-  submit: {
-    margin: theme.spacing(3, 0, 2),
-  },
-}));
+});
 
 export default function Main() {
   const classes = useStyles();

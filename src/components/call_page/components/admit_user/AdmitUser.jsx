@@ -4,10 +4,10 @@ import "./AdmitUser.scss";
 import { SocketContext } from "../../../../SocketContext";
 
 const AdmitUser = () => {
-  const { answerCall, call, callAccepted } = useContext(SocketContext);
+  const { answerCall, call } = useContext(SocketContext);
   return (
     <>
-      {call.isReceivingCall && !callAccepted && (
+      {call.isReceivingCall && !call.isCallAccepted && (
         <div className="admit-block">
           <div className="meeting-header">
             <h3>Admit Request</h3>
@@ -17,7 +17,7 @@ const AdmitUser = () => {
         You have been invited to join a meeting. Please click the button below
       </p> */}
           <div className="meet-link">
-            <span> {call.name}</span>
+            <span> {call.userDetails.name}</span>
             <h4 className="icon" onClick={answerCall}>
               ADMIT
             </h4>

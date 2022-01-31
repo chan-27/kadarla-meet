@@ -1,11 +1,10 @@
 import React, { useContext, useEffect, useState } from "react";
-import { Grid } from "@material-ui/core";
-import Button from "@material-ui/core/Button";
-
-import Typography from "@material-ui/core/Typography";
 import { SocketContext } from "../../SocketContext";
 import { useLocation } from "react-router-dom";
 import NoMatch from "../no_match/NoMatch";
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
 
 const CallJoinPage = () => {
   const { name, callUser, getCurrentStream, myVideo } =
