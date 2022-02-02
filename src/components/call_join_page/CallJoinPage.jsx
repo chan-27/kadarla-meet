@@ -20,7 +20,7 @@ const CallJoinPage = () => {
       location.state.id === ""
     ) {
     } else {
-      getCurrentStream();
+      // getCurrentStream();
     }
   }, []);
 

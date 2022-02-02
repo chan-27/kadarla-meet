@@ -10,6 +10,13 @@ import React, { useEffect, useContext, useState, useRef } from "react";
 import { SocketContext } from "../../../../SocketContext";
 import * as copy from "copy-to-clipboard";
 
+//icons
+import MicRoundedIcon from "@mui/icons-material/MicRounded";
+import MicOffRoundedIcon from "@mui/icons-material/MicOffRounded";
+import VideocamRoundedIcon from "@mui/icons-material/VideocamRounded";
+import VideocamOffRoundedIcon from "@mui/icons-material/VideocamOffRounded";
+import { Typography } from "@mui/material";
+
 const CallPageFooter = ({
   isPresenting,
   stopScreenShare,
@@ -18,8 +25,92 @@ const CallPageFooter = ({
   toggleAudio,
   disconnectCall,
   link,
+  st,
+  isAdmin,
 }) => {
-  const { stream } = useContext(SocketContext);
+  const { stream, peers, leaveCall, muteAudio } = useContext(SocketContext);
+  const [isMicEnabled, setIsMicEnabled] = useState(true);
+  const [isVideoEnabled, setIsVideoEnabled] = useState(true);
+
+  if (!isAdmin) {
+    return (
+      <Box className="footer-item" sx={{ "& > :not(style)": { m: 1 } }}>
+        {peers.length > 0 && (
+          <Fab
+            variant="extended"
+            onClick={() => {
+              console.log("chandan");
+              copy(link, { debug: true, message: "Press #{key} to copy" });
+            }}
+          >
+            <ContentCopyRoundedIcon sx={{ mr: 1 }} />
+            {link}
+          </Fab>
+        )}
+        {peers.length > 0 && (
+          <Fab
+            color="primary"
+            aria-label="add"
+            onClick={() => {
+              leaveCall(link);
+            }}
+            style={{ color: "white", backgroundColor: "#EC255A" }}
+          >
+            <CallEndRoundedIcon />
+          </Fab>
+        )}
+        <Fab
+          color="secondary"
+          aria-label="edit"
+          onClick={() => {
+            st.current.srcObject.getTracks().forEach((track) => {
+              if (track.kind === "video") {
+                track.enabled = !track.enabled;
+                setIsVideoEnabled(track.enabled);
+              }
+            });
+          }}
+          style={{
+            color: "white",
+            backgroundColor: isVideoEnabled ? "#292C6D" : "#4b4e80",
+          }}
+        >
+          {isVideoEnabled ? (
+            <VideocamRoundedIcon />
+          ) : (
+            <VideocamOffRoundedIcon />
+          )}
+        </Fab>
+        <Fab
+          color="secondary"
+          aria-label="edit"
+          onClick={() => {
+            st.current.srcObject.getTracks().forEach((track) => {
+              if (track.kind === "audio") {
+                track.enabled = !track.enabled;
+                setIsMicEnabled(track.enabled);
+                if (peers.length > 0) {
+                  muteAudio();
+                }
+              }
+            });
+          }}
+          style={{
+            color: "white",
+            backgroundColor: isMicEnabled ? "#F0A500" : "#bf9436",
+          }}
+        >
+          {isMicEnabled ? <MicRoundedIcon /> : <MicOffRoundedIcon />}
+        </Fab>
+        {peers.length === 0 && (
+          <Typography variant="h6" style={{ color: "white" }}>
+            please wait until admin lets you in...
+          </Typography>
+        )}
+      </Box>
+    );
+  }
+
   return (
     <Box className="footer-item" sx={{ "& > :not(style)": { m: 1 } }}>
       <Fab
@@ -35,7 +126,10 @@ const CallPageFooter = ({
       <Fab
         color="primary"
         aria-label="add"
-        style={{ color: "white", backgroundColor: "red" }}
+        onClick={() => {
+          leaveCall(link);
+        }}
+        style={{ color: "white", backgroundColor: "#EC255A" }}
       >
         <CallEndRoundedIcon />
       </Fab>
@@ -43,92 +137,42 @@ const CallPageFooter = ({
         color="secondary"
         aria-label="edit"
         onClick={() => {
-          console.log(stream);
-          stream.getTracks().forEach((track) => {
+          st.current.srcObject.getTracks().forEach((track) => {
             if (track.kind === "video") {
               track.enabled = !track.enabled;
+              setIsVideoEnabled(track.enabled);
             }
           });
         }}
+        style={{
+          color: "white",
+          backgroundColor: isVideoEnabled ? "#292C6D" : "#4b4e80",
+        }}
       >
-        <EditIcon />
+        {isVideoEnabled ? <VideocamRoundedIcon /> : <VideocamOffRoundedIcon />}
       </Fab>
-
-      <Fab disabled aria-label="like">
-        <FavoriteIcon />
+      <Fab
+        color="secondary"
+        aria-label="edit"
+        onClick={() => {
+          st.current.srcObject.getTracks().forEach((track) => {
+            if (track.kind === "audio") {
+              track.enabled = !track.enabled;
+              setIsMicEnabled(track.enabled);
+              if (peers.length > 0) {
+                muteAudio();
+              }
+            }
+          });
+        }}
+        style={{
+          color: "white",
+          backgroundColor: isMicEnabled ? "#F0A500" : "#bf9436",
+        }}
+      >
+        {isMicEnabled ? <MicRoundedIcon /> : <MicOffRoundedIcon />}
       </Fab>
     </Box>
-    // <Box className="footer-item">
-    //   <Button
-    //     variant="contained"
-    //     style={{ color: "white", marginRight: "7px" }}
-    //     endIcon={<IoCopy />}
-    //   >
-    //     {link}
-    //   </Button>
-    //   <CopyToClipboard text={link} className="left-item">
-    //     <div className="icon-block">
-    //       <Typography
-    //         variant="h6"
-    //         gutterBottom
-    //         style={{ color: "white", marginRight: "7px" }}
-    //         component="div"
-    //       >
-    //         {link}
-    //       </Typography>
-    //       <IoCopy color="white" size={"20px"} />
-    //     </div>
-    //   </CopyToClipboard>
-    // </Box>
-    // <div className="footer-item">
-    //   <div className="left-item">
-    //     {/* <div className="icon-block">
-    //       Meeting details
-    //       <FontAwesomeIcon className="icon" icon={faAngleUp} />
-    //     </div> */}
-    //     <div className="meet-link">
-    //       <span>{link || "url"}</span>
-    //       <CopyToClipboard text={link}>
-    //         <h4 className="icon"> copy</h4>
-    //       </CopyToClipboard>
-    //     </div>
-    //   </div>
-    //   <div className="center-item">
-    //     {/* <div
-    //       className={`icon-block ${!isAudio ? "red-bg" : null}`}
-    //       onClick={() => toggleAudio(!isAudio)}
-    //     >
-    //       <FontAwesomeIcon
-    //         className="icon"
-    //         icon={isAudio ? faMicrophone : faMicrophoneSlash}
-    //       />
-    //     </div> */}
-    //     <div className="icon-block" onClick={disconnectCall}>
-    //       <FontAwesomeIcon className="icon red" icon={faPhone} />
-    //     </div>
-    //     {/* <div className="icon-block">
-    //       <FontAwesomeIcon className="icon" icon={faVideo} />
-    //     </div> */}
-    //   </div>
-    //   <div className="right-item">
-    //     {/* <div className="icon-block">
-    //       <FontAwesomeIcon className="icon red" icon={faClosedCaptioning} />
-    //       <p className="title">Turn on captions</p>
-    //     </div> */}
-
-    //     {/* {isPresenting ? (
-    //       <div className="icon-block" onClick={stopScreenShare}>
-    //         <FontAwesomeIcon className="icon red" icon={faDesktop} />
-    //         <p className="title">Stop presenting</p>
-    //       </div>
-    //     ) : (
-    //       <div className="icon-block" onClick={screenShare}>
-    //         <FontAwesomeIcon className="icon red" icon={faDesktop} />
-    //         <p className="title">Present now</p>
-    //       </div>
-    //     )} */}
-    //   </div>
-    // </div>
   );
 };
 

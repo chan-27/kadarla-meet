@@ -8,6 +8,7 @@ import MeetInfo from "./components/meet_info/MeetInfo";
 import { useLocation } from "react-router-dom";
 import "./CallPage.scss";
 import AdmitUser from "./components/admit_user/AdmitUser";
+import { Typography } from "@mui/material";
 
 const CallPage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -18,78 +19,139 @@ const CallPage = () => {
     peers,
     setPeers,
     peersRef,
-    stream,
     callAccepted,
     callEnded,
     me,
     leaveCall,
     getCurrentStream,
     userVideo,
+    socketFunctions,
   } = useContext(SocketContext);
   const location = useLocation();
   const myVideoCaller = useRef();
+  const myStream = useRef();
 
   useEffect(() => {
-    console.log("call page useeffect", location.state.isAdmin);
-    // myVideo.current.srcObject = stream;
-    console.log("Joining STREAM");
     setIsAdmin(location.state.isAdmin);
-    if (location.state.isAdmin) getCurrentStream();
-    else {
-      setTimeout(() => {
-        console.log("current stream", stream);
-        myVideo.current.srcObject = stream;
-      }, 1000);
-    }
-    // for (let i = 0; i < 4; i++) {
-    //   peers.push(peers[0]);
-    //   if (i === 3) setPeers();
-    // }
+
+    socketFunctions()
+      .then((result) => {
+        myStream.current.srcObject = result;
+      })
+      .catch((err) => {
+        console.log("error", err);
+      });
   }, []);
 
   return (
     <div className="callpage-container">
-      {/* <video src="" controls></video> */}
-      {stream && (
+      {
         <video
           playsInline
           muted
-          ref={myVideo}
+          ref={myStream}
           autoPlay
           className={
-            callAccepted && !callEnded
+            peers.length > 0
               ? "video-container-call-started"
               : "video-container"
           }
         />
-      )}
-      {callAccepted && !callEnded && (
-        <VideoGrid peers={peers} />
-
-        // <video
-        //   playsInline
-        //   ref={userVideo}
-        //   autoPlay
-        //   className="video-container"
-        // />
-      )}
-      {/* <CallPageHeader /> */}
+      }
+      {peers.length > 0 && <VideoGrid peers={peers} />}
       <CallPageFooter
         link={window.location.pathname.split("/")[1]}
         disconnectCall={leaveCall}
+        st={myStream}
+        isAdmin={isAdmin}
       />
+
       {isAdmin && <AdmitUser />}
     </div>
   );
 };
 
+function VideoGrid({ peers }) {
+  const [gridSpacing, setGridSpacing] = useState(12);
+  const { peersRef } = useContext(SocketContext);
+
+  useEffect(() => {
+    setGridSpacing(Math.max(Math.floor(12 / peers.length), 6));
+  }, [peers.length]);
+  console.log("peers UI", peers);
+  return (
+    <Grid
+      container
+      spacing={2}
+      style={{
+        // backgroundColor: "red",
+        maxHeight: "calc(100vh - 90px)",
+        justify: "center",
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: "10px",
+        marginBottom: "10px",
+        marginLeft: "20px",
+        marginRight: "20px",
+      }}
+    >
+      {peers.map((peer, index) => {
+        return (
+          <Grid
+            item
+            key={peersRef.current.find((p) => p.peer === peer).peerID}
+            xs={peers.length <= 2 ? 12 : 6}
+            sm={peers.length <= 4 ? gridSpacing : 4}
+            style={{
+              position: "relative",
+              // backgroundColor: "green",
+              // marginLeft: "15px",
+              width: `100%`,
+              height: `${
+                peers.length <= 2
+                  ? "86vh"
+                  : `calc( ${100 / Math.min(peers.length, 2)}vh - 90px)`
+              }`,
+              maxHeight: "calc(100vh-90px)",
+              padding: "2px",
+            }}
+          >
+            <VideoEle peer={peer} number={peers.length}></VideoEle>
+            <Typography
+              variant="subtitle1"
+              style={{
+                color: "white",
+                backgroundColor: "#2C394B",
+                borderTopLeftRadius: "20px",
+                borderTopRightRadius: "5px",
+                borderBottomRightRadius: "5px",
+                // zIndex: "1",
+                padding: "7px",
+                position: "absolute",
+                top: "0px",
+              }}
+            >
+              {peersRef.current.find((p) => p.peer === peer).name}
+            </Typography>
+          </Grid>
+        );
+      })}
+    </Grid>
+  );
+}
+
 const VideoEle = (props) => {
   const ref = useRef();
   useEffect(() => {
-    console.log("video ele", props.number);
+    props.peer.on("connect", () => {
+      console.log("peer connected", props.peer);
+    });
     props.peer.on("track", (track, stream) => {
       console.log("stream", stream);
       ref.current.srcObject = stream;
+    });
+    props.peer.on("date", (date) => {
+      console.log("date", date);
     });
   }, []);
   return (
@@ -101,36 +163,17 @@ const VideoEle = (props) => {
         transform: `scaleX(-1)`,
         width: `100%`,
         height: "100%",
-        maxHeight: "90vh",
+        // height: `${
+        //   props.number <= 2
+        //     ? "86vh"
+        //     : `calc( ${100 / Math.min(props.number, 2)}vh - 90px)`
+        // }`,
+        // maxHeight: "calc(100vh-90px)",
+        borderRadius: "20px",
+        objectFit: "cover",
       }}
     />
   );
 };
-
-function VideoGrid({ peers }) {
-  const [gridSpacing, setGridSpacing] = useState(12);
-
-  useEffect(() => {
-    setGridSpacing(Math.max(Math.floor(12 / peers.length), 4));
-  }, [peers.length]);
-
-  return (
-    <Grid container style={{ height: "100%" }}>
-      {peers.map((peer, index) => {
-        console.log("peer", peers.length);
-        return (
-          <Grid
-            item
-            xs={gridSpacing}
-            alignItems="center"
-            // style={{ backgroundColor: "red" }}
-          >
-            <VideoEle key={index} peer={peer} number={peers.length}></VideoEle>
-          </Grid>
-        );
-      })}
-    </Grid>
-  );
-}
 
 export default CallPage;

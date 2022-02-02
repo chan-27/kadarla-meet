@@ -57,20 +57,21 @@ export default function Main() {
   const classes = useStyles();
   const [meetCode, setMeetCode] = useState("");
   let [backgroundImage, setBackgroundImage] = useState(null);
-  const [createMeet, setCreateMeet] = useState(true);
+  const [createMeet, setCreateMeet] = useState(false);
   const { name, setName, startCall, me, callUser, getCurrentStream, myVideo } =
     useContext(SocketContext);
   const navigate = useNavigate();
 
   const handleCreateMeet = async () => {
-    console.log("handleSubmit");
+    console.log("handleSubmit new");
     await startCall();
   };
 
   const handleJoinMeet = async () => {
     console.log(meetCode);
 
-    navigate(`/join`, { state: { isAdmin: false, id: meetCode } });
+    // navigate(`/join`, { state: { isAdmin: false, id: meetCode } });
+    callUser(meetCode);
   };
 
   useEffect(() => {
@@ -154,6 +155,7 @@ export default function Main() {
                 </Typography>
 
                 <TextField
+                  key="meet_code"
                   variant="outlined"
                   margin="normal"
                   required

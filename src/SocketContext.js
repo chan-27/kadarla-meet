@@ -2,11 +2,12 @@ import React, { createContext, useState, useRef, useEffect } from "react";
 import { io } from "socket.io-client";
 import Peer from "simple-peer";
 import { Link, useNavigate } from "react-router-dom";
+import { PercentSharp } from "@mui/icons-material";
 
 const SocketContext = createContext();
 
-// const socket = io("https://kadarla-video-call.herokuapp.com/");
-const socket = io("http://localhost:8000");
+const socket = io("https://kadarla-video-call.herokuapp.com/");
+// const socket = io("http://localhost:8000");
 
 const ContextProvider = ({ children }) => {
   const [callAccepted, setCallAccepted] = useState(false);
@@ -16,6 +17,7 @@ const ContextProvider = ({ children }) => {
   const [call, setCall] = useState({});
   const [me, setMe] = useState("");
   const [peers, setPeers] = useState([]);
+  const [pendingRequest, setPendingRequests] = useState([]);
 
   const peersRef = useRef([]);
   const myVideo = useRef();
@@ -23,6 +25,7 @@ const ContextProvider = ({ children }) => {
   const navigate = useNavigate();
 
   const startCall = () => {
+    console.log("start call", name);
     socket.emit("create_room", name);
     // if (me !== "") navigate(`/${me}`, { state: { isAdmin: true } });
   };
@@ -32,58 +35,98 @@ const ContextProvider = ({ children }) => {
       .getUserMedia({ video: true, audio: true })
       .then((currentStream) => {
         setStream(currentStream);
-        console.log("Setting stream", stream);
         myVideo.current.srcObject = currentStream;
       });
   };
 
   useEffect(() => {
+    console.log("useEffect SOCKET CONTEXT");
+    socket.on("me", () => {
+      console.log("RSOSOOSOSO");
+    });
     socket.on("room_created", (roomId) => {
       console.log("ROOM CREATED", roomId);
       navigate(`/${roomId}`, { state: { isAdmin: true } });
     });
+    socket.on("user_left", ({ peerID }) => {
+      console.log("USER LEFT", peerID);
+      const item = peersRef.current.find((p) => p.peerID === peerID);
+      item.peer.destroy();
 
-    socket.on("join_room_request", ({ roomId, userDetails }) => {
-      setCall({
-        isReceivingCall: true,
-        isCallAccepted: false,
-        roomId: roomId,
-        userDetails,
+      setPeers((peers) => {
+        console.log(peers);
+        return peers.filter((p) => p !== item.peer);
       });
     });
+  }, []);
 
-    socket.on("receiving_signal", ({ signal, from }) => {
-      navigator.mediaDevices
-        .getUserMedia({ video: true, audio: true })
-        .then((currentStream) => {
-          myVideo.current.srcObject = currentStream;
-          setStream(currentStream);
-
-          console.log("RECEIVING SIGNAL", signal, from);
-          console.log("Stream", currentStream);
-          const peer = addPeer(signal, from, currentStream);
-          peersRef.current.push({ peer, peerID: from });
-          setPeers((prevPeers) => [...prevPeers, peer]);
-        });
+  async function socketFunctions() {
+    const _stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
     });
+    console.log("STREAM ___s", _stream);
+    // setStream(_stream);
+    socket.on("join_room_request", ({ roomId, userDetails }) => {
+      setCall({ ...userDetails, roomId });
+      console.log(pendingRequest);
+      setPendingRequests([...pendingRequest, userDetails]);
+    });
+    socket.on("receiving_signal", ({ signal, from, name }) => {
+      // navigator.mediaDevices
+      //   .getUserMedia({ video: true, audio: true })
+      //   .then((currentStream) => {
+      //     myVideo.current.srcObject = currentStream;
+      //     setStream(currentStream);
 
+      //     console.log("RECEIVING SIGNAL", signal, from);
+      console.log("Stream reve", _stream);
+      const peer = addPeer(signal, from, _stream);
+      peersRef.current.push({
+        peer,
+        peerID: from,
+        name: name,
+        micOff: false,
+        camOff: false,
+      });
+      setPeers((prevPeers) => [...prevPeers, peer]);
+      // });
+    });
     socket.on("receiving_returned_signal", ({ signal, id }) => {
       console.log("RECEIVING RETURN SIGNAL", signal, id);
       console.log(peersRef.current);
       const item = peersRef.current.find((p) => p.peerID === id);
       item.peer.signal(signal);
     });
-  }, []);
+    socket.on("request_accepted", ({ roomId, userDetails, users }) => {
+      const peers = [];
+      users.forEach((user) => {
+        const peer = createPeer(user.id, _stream);
+        peersRef.current.push({
+          peerID: user.id,
+          name: user.name,
+          peer,
+        });
+        peers.push(peer);
+      });
+      setPeers(peers);
+    });
 
-  const answerCall = () => {
-    setCallAccepted(true);
-    setCall({ ...call, isCallAccepted: true });
+    socket.on("disconnect", () => {
+      console.log("DISCONNECTED");
+      peers.forEach((peer) => peer.destroy());
+      _stream.getTracks().forEach((track) => track.stop());
+      navigate("/");
+    });
 
+    return _stream;
+  }
+  const answerCall = (item) => {
     socket.emit("join_room_accept", {
-      roomId: call.roomId,
+      roomId: item.roomId,
       userDetails: {
-        name: call.userDetails.name,
-        socketId: call.userDetails.socketId,
+        name: item.name,
+        socketId: item.socketId,
       },
     });
   };
@@ -97,24 +140,8 @@ const ContextProvider = ({ children }) => {
         socketId: socket.id,
       },
     });
-
-    socket.on("request_accepted", ({ roomId, userDetails, users }) => {
-      const peers = [];
-      users.forEach((user) => {
-        console.log("USER", user);
-        console.log("Stream", stream);
-        const peer = createPeer(user.id, stream);
-        peersRef.current.push({
-          peerID: user.id,
-          peer,
-        });
-        peers.push(peer);
-      });
-      console.log("PEERS", peers);
-      setPeers(peers);
-      navigate(`/${roomId}`, { state: { isAdmin: false } });
-      setCallAccepted(true);
-    });
+    navigate(`/${id}`, { state: { isAdmin: false } });
+    return;
   };
 
   function createPeer(userToStream, stream) {
@@ -130,6 +157,7 @@ const ContextProvider = ({ children }) => {
         to: userToStream,
         signal: data,
         from: socket.id,
+        name: name,
       });
     });
 
@@ -157,35 +185,40 @@ const ContextProvider = ({ children }) => {
     return peer;
   }
 
-  const leaveCall = () => {
-    setCallEnded(true);
-    setCallAccepted(false);
-    setCall({});
+  function muteAudio() {
+    peers.forEach((peer) => {
+      peer.write("mute_audio");
+    });
+  }
 
-    navigate(`/`);
-    window.location.reload();
+  const leaveCall = (roomId) => {
+    socket.emit("leave_room", roomId);
+
+    socket.disconnect();
   };
 
   return (
     <SocketContext.Provider
       value={{
         call,
-        callAccepted,
+
         myVideo,
         userVideo,
         stream,
         name,
         setName,
-        callEnded,
         me,
         peers,
         peersRef,
+        pendingRequest,
+        muteAudio,
         setPeers,
         callUser,
         leaveCall,
         answerCall,
         startCall,
         getCurrentStream,
+        socketFunctions,
       }}
     >
       {children}

@@ -1,27 +1,53 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import "./AdmitUser.scss";
 
 import { SocketContext } from "../../../../SocketContext";
 
 const AdmitUser = () => {
   const { answerCall, call } = useContext(SocketContext);
+  const [pendingRequest, setPendingRequest] = useState([]);
+  useEffect(() => {
+    console.log("pendingRequest", pendingRequest.length);
+    if ("roomId" in call) {
+      setPendingRequest((l) => [...l, call]);
+    }
+  }, [call]);
   return (
     <>
-      {call.isReceivingCall && !call.isCallAccepted && (
+      {pendingRequest.length > 0 && (
         <div className="admit-block">
           <div className="meeting-header">
             <h3>Admit Request</h3>
-            <h4 className="icon"> close</h4>
+            <h4
+              className="icon"
+              onClick={() => {
+                setPendingRequest([]);
+              }}
+            >
+              close
+            </h4>
           </div>
           {/* <p className="info-text">
         You have been invited to join a meeting. Please click the button below
       </p> */}
-          <div className="meet-link">
-            <span> {call.userDetails.name}</span>
-            <h4 className="icon" onClick={answerCall}>
-              ADMIT
-            </h4>
-          </div>
+          {pendingRequest.map((item) => {
+            return (
+              <div className="meet-link" key={item.socketId}>
+                <span> {item.name}</span>
+                <h4
+                  className="icon"
+                  onClick={() => {
+                    setPendingRequest(
+                      pendingRequest.filter((i) => i.socketId !== item.socketId)
+                    );
+                    answerCall(item);
+                  }}
+                >
+                  ADMIT
+                </h4>
+              </div>
+            );
+          })}
         </div>
       )}
     </>
