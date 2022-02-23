@@ -8,7 +8,6 @@ import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
 import CallEndRoundedIcon from "@mui/icons-material/CallEndRounded";
 import React, { useEffect, useContext, useState, useRef } from "react";
 import { SocketContext } from "../../../../SocketContext";
-import * as copy from "copy-to-clipboard";
 
 //icons
 import MicRoundedIcon from "@mui/icons-material/MicRounded";
@@ -27,6 +26,7 @@ const CallPageFooter = ({
   link,
   st,
   isAdmin,
+  isMyVideoHidden,
 }) => {
   const { stream, peers, leaveCall, muteAudio } = useContext(SocketContext);
   const [isMicEnabled, setIsMicEnabled] = useState(true);
@@ -39,8 +39,7 @@ const CallPageFooter = ({
           <Fab
             variant="extended"
             onClick={() => {
-              console.log("chandan");
-              copy(link, { debug: true, message: "Press #{key} to copy" });
+              navigator.clipboard.writeText(link);
             }}
           >
             <ContentCopyRoundedIcon sx={{ mr: 1 }} />
@@ -113,11 +112,15 @@ const CallPageFooter = ({
 
   return (
     <Box className="footer-item" sx={{ "& > :not(style)": { m: 1 } }}>
+      {peers.length === 0 && (
+        <Typography variant="h6" style={{ color: "white" }}>
+          {"Share the code and invite your friends ->"}
+        </Typography>
+      )}
       <Fab
         variant="extended"
         onClick={() => {
-          console.log("chandan");
-          copy(link, { debug: true, message: "Press #{key} to copy" });
+          navigator.clipboard.writeText(link);
         }}
       >
         <ContentCopyRoundedIcon sx={{ mr: 1 }} />

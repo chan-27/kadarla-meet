@@ -63,14 +63,10 @@ export default function Main() {
   const navigate = useNavigate();
 
   const handleCreateMeet = async () => {
-    console.log("handleSubmit new");
     await startCall();
   };
 
   const handleJoinMeet = async () => {
-    console.log(meetCode);
-
-    // navigate(`/join`, { state: { isAdmin: false, id: meetCode } });
     callUser(meetCode);
   };
 

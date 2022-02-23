@@ -7,7 +7,6 @@ const AdmitUser = () => {
   const { answerCall, call } = useContext(SocketContext);
   const [pendingRequest, setPendingRequest] = useState([]);
   useEffect(() => {
-    console.log("pendingRequest", pendingRequest.length);
     if ("roomId" in call) {
       setPendingRequest((l) => [...l, call]);
     }

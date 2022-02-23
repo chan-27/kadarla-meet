@@ -12,6 +12,7 @@ import { Typography } from "@mui/material";
 
 const CallPage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isMyVideoHidden, setIsMyVideoHidden] = useState(false);
   const {
     name,
 
@@ -38,9 +39,7 @@ const CallPage = () => {
       .then((result) => {
         myStream.current.srcObject = result;
       })
-      .catch((err) => {
-        console.log("error", err);
-      });
+      .catch((err) => {});
   }, []);
 
   return (
@@ -64,6 +63,7 @@ const CallPage = () => {
         disconnectCall={leaveCall}
         st={myStream}
         isAdmin={isAdmin}
+        isMyVideoHidden={isMyVideoHidden}
       />
 
       {isAdmin && <AdmitUser />}
@@ -78,7 +78,6 @@ function VideoGrid({ peers }) {
   useEffect(() => {
     setGridSpacing(Math.max(Math.floor(12 / peers.length), 6));
   }, [peers.length]);
-  console.log("peers UI", peers);
   return (
     <Grid
       container
@@ -102,6 +101,7 @@ function VideoGrid({ peers }) {
             key={peersRef.current.find((p) => p.peer === peer).peerID}
             xs={peers.length <= 2 ? 12 : 6}
             sm={peers.length <= 4 ? gridSpacing : 4}
+            className="phone2"
             style={{
               position: "relative",
               // backgroundColor: "green",
@@ -109,7 +109,7 @@ function VideoGrid({ peers }) {
               width: `100%`,
               height: `${
                 peers.length <= 2
-                  ? "86vh"
+                  ? "100%"
                   : `calc( ${100 / Math.min(peers.length, 2)}vh - 90px)`
               }`,
               maxHeight: "calc(100vh-90px)",
@@ -143,11 +143,7 @@ function VideoGrid({ peers }) {
 const VideoEle = (props) => {
   const ref = useRef();
   useEffect(() => {
-    props.peer.on("connect", () => {
-      console.log("peer connected", props.peer);
-    });
     props.peer.on("track", (track, stream) => {
-      console.log("stream", stream);
       ref.current.srcObject = stream;
     });
     props.peer.on("date", (date) => {

@@ -25,7 +25,6 @@ const ContextProvider = ({ children }) => {
   const navigate = useNavigate();
 
   const startCall = () => {
-    console.log("start call", name);
     socket.emit("create_room", name);
     // if (me !== "") navigate(`/${me}`, { state: { isAdmin: true } });
   };
@@ -40,21 +39,14 @@ const ContextProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    console.log("useEffect SOCKET CONTEXT");
-    socket.on("me", () => {
-      console.log("RSOSOOSOSO");
-    });
     socket.on("room_created", (roomId) => {
-      console.log("ROOM CREATED", roomId);
       navigate(`/${roomId}`, { state: { isAdmin: true } });
     });
     socket.on("user_left", ({ peerID }) => {
-      console.log("USER LEFT", peerID);
       const item = peersRef.current.find((p) => p.peerID === peerID);
       item.peer.destroy();
 
       setPeers((peers) => {
-        console.log(peers);
         return peers.filter((p) => p !== item.peer);
       });
     });
@@ -65,11 +57,11 @@ const ContextProvider = ({ children }) => {
       video: true,
       audio: true,
     });
-    console.log("STREAM ___s", _stream);
+
     // setStream(_stream);
     socket.on("join_room_request", ({ roomId, userDetails }) => {
       setCall({ ...userDetails, roomId });
-      console.log(pendingRequest);
+
       setPendingRequests([...pendingRequest, userDetails]);
     });
     socket.on("receiving_signal", ({ signal, from, name }) => {
@@ -78,9 +70,6 @@ const ContextProvider = ({ children }) => {
       //   .then((currentStream) => {
       //     myVideo.current.srcObject = currentStream;
       //     setStream(currentStream);
-
-      //     console.log("RECEIVING SIGNAL", signal, from);
-      console.log("Stream reve", _stream);
       const peer = addPeer(signal, from, _stream);
       peersRef.current.push({
         peer,
@@ -93,8 +82,6 @@ const ContextProvider = ({ children }) => {
       // });
     });
     socket.on("receiving_returned_signal", ({ signal, id }) => {
-      console.log("RECEIVING RETURN SIGNAL", signal, id);
-      console.log(peersRef.current);
       const item = peersRef.current.find((p) => p.peerID === id);
       item.peer.signal(signal);
     });
@@ -113,7 +100,6 @@ const ContextProvider = ({ children }) => {
     });
 
     socket.on("disconnect", () => {
-      console.log("DISCONNECTED");
       peers.forEach((peer) => peer.destroy());
       _stream.getTracks().forEach((track) => track.stop());
       navigate("/");
@@ -152,7 +138,6 @@ const ContextProvider = ({ children }) => {
     });
 
     peer.on("signal", (data) => {
-      console.log("SENDING SIGNAL", data);
       socket.emit("sending_signal", {
         to: userToStream,
         signal: data,
@@ -172,7 +157,6 @@ const ContextProvider = ({ children }) => {
     });
 
     peer.on("signal", (data) => {
-      console.log("SENDING RETURN SIGNAL", data);
       socket.emit("returning_signal", {
         to: from,
         signal: data,
